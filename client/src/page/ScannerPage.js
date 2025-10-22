@@ -7,11 +7,11 @@ import {
   FaTimesCircle,
   FaBullhorn,
   FaArrowLeft,
-} from "react-icons/fa"; 
+} from "react-icons/fa";
 import api from "../api/axiosConfig";
 import { assets } from "../Assets/logo";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 function ScannerPage() {
   const [result, setResult] = useState("");
@@ -20,7 +20,7 @@ function ScannerPage() {
   const [scanningAllowed, setScanningAllowed] = useState(true);
   const [announcement, setAnnouncement] = useState(null);
   const scannerRef = useRef(null);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAnnouncement = async () => {
@@ -44,20 +44,6 @@ function ScannerPage() {
     };
   }, []);
 
-  useEffect(() => {
-    const now = new Date();
-    const currentHour = now.getHours();
-    if (currentHour >= 16) {
-      setScanningAllowed(false);
-      Swal.fire({
-        icon: "warning",
-        title: "Class Ended",
-        text: "Sorry, You cannot scan attendance after 4:00 PM.",
-        confirmButtonColor: "#800000",
-      });
-    }
-  }, []);
-
   const handleScan = async (data) => {
     if (!data || !scanningAllowed) return;
 
@@ -72,7 +58,7 @@ function ScannerPage() {
     }
 
     setResult(text);
-    setScanningAllowed(false); // Pause scanning during notification
+    setScanningAllowed(false);
 
     let payload = {};
     try {
@@ -96,7 +82,6 @@ function ScannerPage() {
       setMsg({ text: errorMessage, type: "error" });
     }
 
-    // Hide message and resume scanning after 5 seconds
     setTimeout(() => {
       setMsg({ text: "", type: "" });
       setScanningAllowed(true);
@@ -141,7 +126,7 @@ function ScannerPage() {
         padding: "2rem",
       }}
     >
-      {/* ✅ Circle button for Admin Login */}
+      {/* Circle button for Admin Login */}
       <button
         onClick={() => navigate("/login")}
         style={{
@@ -162,13 +147,16 @@ function ScannerPage() {
           zIndex: 10,
           transition: "transform 0.2s ease, background-color 0.2s ease",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#a00000")}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#800000")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.backgroundColor = "#a00000")
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.backgroundColor = "#800000")
+        }
         title="Back to Admin Login"
       >
         <FaArrowLeft size={20} />
       </button>
-      {/* ✅ End of added button */}
 
       <div
         style={{
@@ -275,7 +263,7 @@ function ScannerPage() {
                     constraints={{ facingMode: "environment" }}
                     styles={{ width: "100%" }}
                   />
-                ) : (
+                ) : msg.text ? null : (
                   <div
                     style={{
                       color: "#fff",
@@ -283,8 +271,7 @@ function ScannerPage() {
                       textAlign: "center",
                     }}
                   >
-                    {msg.text ||
-                      "Camera not accessible or scanning disabled after 4PM."}
+                    Camera not accessible or scanning disabled.
                   </div>
                 )}
 
