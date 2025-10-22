@@ -1,30 +1,33 @@
 import cron from "node-cron";
 import db from "../config/database.js";
+import moment from "moment-timezone"; 
 
 // ------------------- CRON JOB -------------------
-cron.schedule("0 16 * * *", () => {
-  console.log("Running end-of-day auto-close...");
+cron.schedule("* * * * *", () => {
+  const now = moment().tz("Asia/Manila");
+  if (now.hour() === 16 && now.minute() === 0) {
+    console.log("Running end-of-day auto-close...");
 
-  const sql = `
-    UPDATE attendance
-    SET time_out='16:00:00', auto_closed=1
-    WHERE time_out IS NULL AND DATE(date_scanned)=CURDATE()
-  `;
+    const sql = `
+      UPDATE attendance
+      SET time_out='16:00:00', auto_closed=1
+      WHERE time_out IS NULL AND DATE(date_scanned)=CURDATE()
+    `;
 
-  db.query(sql, (err, result) => {
-    if (err) return console.error("Auto-close failed:", err.message);
-    console.log(`Auto-closed ${result.affectedRows} attendance records.`);
-  });
+    db.query(sql, (err, result) => {
+      if (err) return console.error("Auto-close failed:", err.message);
+      console.log(`Auto-closed ${result.affectedRows} attendance records.`);
+    });
+  }
 });
 
 // ------------------- HELPER -------------------
-const getStatus = (date_scanned) => {
-  if (!date_scanned) return "Absent";
+const getStatus = (scanMoment) => {
+  if (!scanMoment) return "Absent";
 
-  const scanTime = new Date(date_scanned);
-  const hours = scanTime.getHours();
-  const minutes = scanTime.getMinutes();
-  const day = scanTime.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const hours = scanMoment.hours();
+  const minutes = scanMoment.minutes();
+  const day = scanMoment.day(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
   // MONDAY RULES
   if (day === 1) {
@@ -50,11 +53,11 @@ export const studentAttendance = (req, res) => {
   const { user_id, username } = req.body;
   if (!user_id) return res.status(400).json({ error: "User ID is required" });
 
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const timeNow = now.toTimeString().slice(0, 8);
+  const now = moment().tz("Asia/Manila"); // ✅ Localized time
+  const todayStr = now.format("YYYY-MM-DD");
+  const timeNow = now.format("HH:mm:ss");
   const status = getStatus(now);
-  const day = now.getDay();
+  const day = now.day();
 
   // Block weekends
   if (day === 0 || day === 6) {
@@ -64,7 +67,7 @@ export const studentAttendance = (req, res) => {
   }
 
   // Block after 4 PM
-  if (now.getHours() >= 16) {
+  if (now.hour() >= 16) {
     return res.json({
       msg: `Hi ${username}, attendance scanning is closed after 4:00 PM.`,
     });
@@ -78,8 +81,7 @@ export const studentAttendance = (req, res) => {
   `;
 
   db.query(sqlClosePrev, [user_id, todayStr], (errClose) => {
-    if (errClose)
-      console.error("Error auto-closing previous:", errClose.message);
+    if (errClose) console.error("Error auto-closing previous:", errClose.message);
 
     // Step 2: Check if there is already an attendance record for today
     const sqlCheckToday = `
@@ -89,31 +91,25 @@ export const studentAttendance = (req, res) => {
     db.query(sqlCheckToday, [user_id, todayStr], (errCheck, result) => {
       if (errCheck) return res.status(500).json({ error: errCheck.message });
 
-      // If NO record today  TIME-IN
+      // If NO record today — TIME-IN
       if (result.length === 0) {
         const sqlInsert = `
           INSERT INTO attendance (user_id, date_scanned, time_in, status)
           VALUES (?, NOW(), ?, ?)
         `;
         db.query(sqlInsert, [user_id, timeNow, status], (errInsert) => {
-          if (errInsert)
-            return res.status(500).json({ error: errInsert.message });
-          return res.json({
-            msg: `Hi ${username}, you are marked "${status}" at ${timeNow}.`,
-          });
+          if (errInsert) return res.status(500).json({ error: errInsert.message });
+          return res.json({ msg: `Hi ${username}, you are marked "${status}" at ${timeNow}.` });
         });
-      }
-      // If record exists  TIME-OUT (only if no time_out and not auto_closed)
+      } 
+      // If record exists — TIME-OUT (only if no time_out and not auto_closed)
       else {
         const record = result[0];
         if (!record.time_out && record.auto_closed !== 1) {
           const sqlUpdate = `UPDATE attendance SET time_out=? WHERE attendance_id=?`;
           db.query(sqlUpdate, [timeNow, record.attendance_id], (errUpdate) => {
-            if (errUpdate)
-              return res.status(500).json({ error: errUpdate.message });
-            return res.json({
-              msg: `Hi ${username}, your time-out has been recorded at ${timeNow}.`,
-            });
+            if (errUpdate) return res.status(500).json({ error: errUpdate.message });
+            return res.json({ msg: `Hi ${username}, your time-out has been recorded at ${timeNow}.` });
           });
         } else if (record.auto_closed === 1) {
           return res.json({
@@ -128,6 +124,14 @@ export const studentAttendance = (req, res) => {
     });
   });
 };
+
+
+
+
+
+
+
+
 
 // ================== Delete attendance ==================
 const deleteAttendance = (req, res) => {
