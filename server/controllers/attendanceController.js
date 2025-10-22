@@ -78,7 +78,8 @@ export const studentAttendance = (req, res) => {
   `;
 
   db.query(sqlClosePrev, [user_id, todayStr], (errClose) => {
-    if (errClose) console.error("Error auto-closing previous:", errClose.message);
+    if (errClose)
+      console.error("Error auto-closing previous:", errClose.message);
 
     // Step 2: Check if there is already an attendance record for today
     const sqlCheckToday = `
@@ -95,18 +96,24 @@ export const studentAttendance = (req, res) => {
           VALUES (?, NOW(), ?, ?)
         `;
         db.query(sqlInsert, [user_id, timeNow, status], (errInsert) => {
-          if (errInsert) return res.status(500).json({ error: errInsert.message });
-          return res.json({ msg: `Hi ${username}, you are marked "${status}" at ${timeNow}.` });
+          if (errInsert)
+            return res.status(500).json({ error: errInsert.message });
+          return res.json({
+            msg: `Hi ${username}, you are marked "${status}" at ${timeNow}.`,
+          });
         });
-      } 
+      }
       // If record exists  TIME-OUT (only if no time_out and not auto_closed)
       else {
         const record = result[0];
         if (!record.time_out && record.auto_closed !== 1) {
           const sqlUpdate = `UPDATE attendance SET time_out=? WHERE attendance_id=?`;
           db.query(sqlUpdate, [timeNow, record.attendance_id], (errUpdate) => {
-            if (errUpdate) return res.status(500).json({ error: errUpdate.message });
-            return res.json({ msg: `Hi ${username}, your time-out has been recorded at ${timeNow}.` });
+            if (errUpdate)
+              return res.status(500).json({ error: errUpdate.message });
+            return res.json({
+              msg: `Hi ${username}, your time-out has been recorded at ${timeNow}.`,
+            });
           });
         } else if (record.auto_closed === 1) {
           return res.json({
@@ -121,13 +128,6 @@ export const studentAttendance = (req, res) => {
     });
   });
 };
-
-
-
-
-
-
-
 
 // ================== Delete attendance ==================
 const deleteAttendance = (req, res) => {
