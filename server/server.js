@@ -44,5 +44,5 @@ app.use("/api", AnnouncementRouter);
 
 
 
-const PORT = process.env.PORT;
+const PORT = process.env.DB_PORT;
 app.listen(PORT, () => console.log(` Server running on port ${PORT}`));

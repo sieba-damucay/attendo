@@ -72,7 +72,6 @@ function ScannerPage() {
     }
 
     setResult(text);
-    setScanningAllowed(false); // Pause scanning during notification
 
     let payload = {};
     try {
@@ -95,12 +94,6 @@ function ScannerPage() {
       const errorMessage = err.response?.data?.error || "Invalid QR Code";
       setMsg({ text: errorMessage, type: "error" });
     }
-
-    // Hide message and resume scanning after 5 seconds
-    setTimeout(() => {
-      setMsg({ text: "", type: "" });
-      setScanningAllowed(true);
-    }, 5000);
   };
 
   const handleError = (err) => {
@@ -287,50 +280,48 @@ function ScannerPage() {
                       "Camera not accessible or scanning disabled after 4PM."}
                   </div>
                 )}
-
-                {/* Notification centered over scanner */}
-                {msg.text && (
-                  <div
-                    className={`alert-box d-flex align-items-center justify-content-center ${
-                      msg.type === "success" ? "success" : "error"
-                    }`}
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      background:
-                        msg.type === "success"
-                          ? "linear-gradient(135deg, #4CAF50, #2E7D32)"
-                          : "linear-gradient(135deg, #E53935, #B71C1C)",
-                      color: "white",
-                      padding: "1.2rem 2rem",
-                      borderRadius: "1rem",
-                      fontWeight: "600",
-                      boxShadow: "0 6px 20px rgba(0,0,0,0.6)",
-                      minWidth: "320px",
-                      maxWidth: "90vw",
-                      textAlign: "center",
-                      zIndex: 10,
-                      pointerEvents: "none",
-                    }}
-                  >
-                    {msg.type === "success" ? (
-                      <FaCheckCircle
-                        style={{ fontSize: "2rem", marginRight: "0.8rem" }}
-                      />
-                    ) : (
-                      <FaTimesCircle
-                        style={{ fontSize: "2rem", marginRight: "0.8rem" }}
-                      />
-                    )}
-                    <span style={{ fontSize: "1.1rem", lineHeight: "1.3" }}>
-                      {msg.text}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
+
+            {msg.text && (
+              <div
+                className={`alert-box d-flex align-items-center justify-content-center mt-3 ${
+                  msg.type === "success" ? "success" : "error"
+                }`}
+                style={{
+                  position: "fixed",
+                  bottom: "2rem",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  background:
+                    msg.type === "success"
+                      ? "linear-gradient(135deg, #4CAF50, #2E7D32)"
+                      : "linear-gradient(135deg, #E53935, #B71C1C)",
+                  color: "white",
+                  padding: "1rem 1.5rem",
+                  borderRadius: "1rem",
+                  fontWeight: "500",
+                  boxShadow: "0 6px 20px rgba(0,0,0,0.4)",
+                  minWidth: "300px",
+                  textAlign: "center",
+                  zIndex: 999,
+                  animation: "slideUp 0.5s ease-out",
+                }}
+              >
+                {msg.type === "success" ? (
+                  <FaCheckCircle
+                    style={{ fontSize: "1.8rem", marginRight: "0.6rem" }}
+                  />
+                ) : (
+                  <FaTimesCircle
+                    style={{ fontSize: "1.8rem", marginRight: "0.6rem" }}
+                  />
+                )}
+                <span style={{ fontSize: "1.05rem", lineHeight: "1.3" }}>
+                  {msg.text}
+                </span>
+              </div>
+            )}
           </>
         )}
       </div>

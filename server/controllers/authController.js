@@ -8,10 +8,11 @@ import crypto from "crypto";
 // console.log("New JWT Secret:", newSecretKey);
 
 const SECRET_KEY = process.env.JWT_SECRET;
-console.log("Using JWT Secret from env:", SECRET_KEY);
+// console.log("Using JWT Secret from env:", SECRET_KEY);
 
 const login = (req, res) => {
   const { email, password } = req.body;
+  console.log("Login attempt for email:", req.body.email);
 
   db.query("SELECT * FROM users WHERE email=?", [email], (err, rows) => {
     if (err) return res.status(500).json({ error: err });
