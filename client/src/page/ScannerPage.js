@@ -161,12 +161,8 @@ function ScannerPage() {
           zIndex: 10,
           transition: "transform 0.2s ease, background-color 0.2s ease",
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.backgroundColor = "#a00000")
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.backgroundColor = "#800000")
-        }
+        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#a00000")}
+        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#800000")}
         title="Back to Admin Login"
       >
         <FaArrowLeft size={20} />
@@ -277,7 +273,17 @@ function ScannerPage() {
                     constraints={{ facingMode: "environment" }}
                     styles={{ width: "100%" }}
                   />
-                ) : null}
+                ) : (
+                  <div
+                    style={{
+                      color: "#fff",
+                      padding: "2rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    {msg.text || null}
+                  </div>
+                )}
 
                 {/* Notification centered over scanner */}
                 {msg.text && (
