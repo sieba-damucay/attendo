@@ -63,14 +63,7 @@ export const studentAttendance = (req, res) => {
     });
   }
 
-  // Block after 4 PM
-  if (now.getHours() >= 16) {
-    return res.json({
-      msg: `Hi ${username}, attendance scanning is closed after 4:00 PM.`,
-    });
-  }
-
-  //  Step 1: Auto-close any unclosed previous attendance
+  // Step 1: Auto-close any unclosed previous attendance
   const sqlClosePrev = `
     UPDATE attendance
     SET time_out='16:00:00', auto_closed=1
@@ -88,8 +81,15 @@ export const studentAttendance = (req, res) => {
     db.query(sqlCheckToday, [user_id, todayStr], (errCheck, result) => {
       if (errCheck) return res.status(500).json({ error: errCheck.message });
 
-      // If NO record today  TIME-IN
+      // If NO record today → TIME-IN
       if (result.length === 0) {
+        // Check 4PM only for TIME-IN
+        if (now.getHours() >= 16) {
+          return res.json({
+            msg: `Hi ${username}, attendance scanning is closed after 4:00 PM.`,
+          });
+        }
+
         const sqlInsert = `
           INSERT INTO attendance (user_id, date_scanned, time_in, status)
           VALUES (?, NOW(), ?, ?)
@@ -99,9 +99,10 @@ export const studentAttendance = (req, res) => {
           return res.json({ msg: `Hi ${username}, you are marked "${status}" at ${timeNow}.` });
         });
       } 
-      // If record exists  TIME-OUT (only if no time_out and not auto_closed)
+      // If record exists → TIME-OUT or already done
       else {
         const record = result[0];
+
         if (!record.time_out && record.auto_closed !== 1) {
           const sqlUpdate = `UPDATE attendance SET time_out=? WHERE attendance_id=?`;
           db.query(sqlUpdate, [timeNow, record.attendance_id], (errUpdate) => {
@@ -121,6 +122,7 @@ export const studentAttendance = (req, res) => {
     });
   });
 };
+
 
 
 
