@@ -7,11 +7,11 @@ import {
   FaTimesCircle,
   FaBullhorn,
   FaArrowLeft,
-} from "react-icons/fa";
+} from "react-icons/fa"; 
 import api from "../api/axiosConfig";
 import { assets } from "../Assets/logo";
 import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; 
 
 function ScannerPage() {
   const [result, setResult] = useState("");
@@ -20,7 +20,7 @@ function ScannerPage() {
   const [scanningAllowed, setScanningAllowed] = useState(true);
   const [announcement, setAnnouncement] = useState(null);
   const scannerRef = useRef(null);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const fetchAnnouncement = async () => {
@@ -44,6 +44,20 @@ function ScannerPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    if (currentHour >= 16) {
+      setScanningAllowed(false);
+      Swal.fire({
+        icon: "warning",
+        title: "Class Ended",
+        text: "Sorry, You cannot scan attendance after 4:00 PM.",
+        confirmButtonColor: "#800000",
+      });
+    }
+  }, []);
+
   const handleScan = async (data) => {
     if (!data || !scanningAllowed) return;
 
@@ -58,7 +72,7 @@ function ScannerPage() {
     }
 
     setResult(text);
-    setScanningAllowed(false);
+    setScanningAllowed(false); 
 
     let payload = {};
     try {
@@ -263,17 +277,7 @@ function ScannerPage() {
                     constraints={{ facingMode: "environment" }}
                     styles={{ width: "100%" }}
                   />
-                ) : msg.text ? null : (
-                  <div
-                    style={{
-                      color: "#fff",
-                      padding: "2rem",
-                      textAlign: "center",
-                    }}
-                  >
-                    Camera not accessible or scanning disabled.
-                  </div>
-                )}
+                ) : null}
 
                 {/* Notification centered over scanner */}
                 {msg.text && (
