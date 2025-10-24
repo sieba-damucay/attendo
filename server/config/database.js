@@ -11,7 +11,7 @@ const db = mysql.createConnection({
   host: params.hostname,
   user: params.username,
   password: params.password,
-  database: params.pathname.replace("/", ""), // remove leading slash
+  database: params.pathname.replace("/", ""),       // remove leading slash
   port: params.port,
 });
 

@@ -1,26 +1,41 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 import "./TeacherManagement.css";
 
 function TeacherManagement() {
   const [teachers, setTeachers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ id: null, name: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    id: null,
+    name: "",
+    email: "",
+    password: "",
+  });
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchTeachers = async () => {
+    setLoading(true);
     try {
       const res = await api.get("/admin_teachers");
       setTeachers(res.data);
     } catch (err) {
       console.error(err);
       alert("Failed to fetch teachers");
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => { fetchTeachers(); }, []);
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
 
-  const handleChange = (e) => { setFormData({ ...formData, [e.target.name]: e.target.value }); };
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,18 +46,32 @@ function TeacherManagement() {
       setFormData({ id: null, name: "", email: "", password: "" });
       setShowForm(false);
       fetchTeachers();
-    } catch (err) { console.error(err); alert(err.response?.data?.error || "Operation failed"); }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Operation failed");
+    }
   };
 
   const handleEdit = (teacher) => {
-    setFormData({ id: teacher.user_id, name: teacher.name, email: teacher.email, password: "" });
+    setFormData({
+      id: teacher.user_id,
+      name: teacher.name,
+      email: teacher.email,
+      password: "",
+    });
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this teacher?")) return;
-    try { await api.delete(`/admin_teachers/${id}`); alert("Teacher deleted successfully"); fetchTeachers(); } 
-    catch (err) { console.error(err); alert("Failed to delete teacher"); }
+    try {
+      await api.delete(`/admin_teachers/${id}`);
+      alert("Teacher deleted successfully");
+      fetchTeachers();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete teacher");
+    }
   };
 
   const formatDate = (dateStr) => {
@@ -51,7 +80,10 @@ function TeacherManagement() {
   };
 
   const filteredTeachers = teachers.filter(
-    t => !searchTerm || t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (t) =>
+      !searchTerm ||
+      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -83,6 +115,7 @@ function TeacherManagement() {
           />
         </div>
 
+        {/* Modal Form */}
         {showForm && (
           <div className="modal-overlay" onClick={() => setShowForm(false)}>
             <div
@@ -159,8 +192,9 @@ function TeacherManagement() {
           </div>
         )}
 
+        {/* Table or Skeleton */}
         <div className="table-responsive">
-          <table className="table table-bordered table-striped" style={{fontSize:".8rem"}}>
+          <table className="table table-bordered table-striped" style={{ fontSize: ".8rem" }}>
             <thead style={{ backgroundColor: "#800000", color: "#fff" }}>
               <tr>
                 <th>#</th>
@@ -171,7 +205,20 @@ function TeacherManagement() {
               </tr>
             </thead>
             <tbody>
-              {filteredTeachers.length === 0 ? (
+              {loading ? (
+                // 🦴 Skeleton Rows
+                Array(5)
+                  .fill()
+                  .map((_, index) => (
+                    <tr key={index}>
+                      <td><Skeleton width={20} /></td>
+                      <td><Skeleton width={120} /></td>
+                      <td><Skeleton width={180} /></td>
+                      <td><Skeleton width={150} /></td>
+                      <td><Skeleton width={100} /></td>
+                    </tr>
+                  ))
+              ) : filteredTeachers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="text-center text-muted">
                     No teachers found

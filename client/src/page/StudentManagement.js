@@ -2,12 +2,15 @@ import React, { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./StudentManagement.css";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 function StudentManagement() {
   const [students, setStudents] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [strands, setStrands] = useState([]);
   const [sections, setSections] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
@@ -24,12 +27,19 @@ function StudentManagement() {
   const [searchName, setSearchName] = useState("");
 
   useEffect(() => {
-    fetchTeachers();
-    fetchStrands();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchTeachers(), fetchStrands(), fetchStudents()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   useEffect(() => {
-    fetchStudents();
+    if (!loading) fetchStudents();
   }, [filterStrand, filterSection]);
 
   useEffect(() => {
@@ -92,8 +102,7 @@ function StudentManagement() {
     e.preventDefault();
     try {
       const payload = { ...formData };
-      if (formData.id)
-        await api.put(`/admin_students/${formData.id}`, payload);
+      if (formData.id) await api.put(`/admin_students/${formData.id}`, payload);
       else await api.post("/admin_students", payload);
       alert(formData.id ? "Student updated" : "Student added");
       setFormData({
@@ -148,7 +157,8 @@ function StudentManagement() {
     !dateStr ? "-" : new Date(dateStr).toLocaleString();
 
   const filteredStudents = students.filter(
-    (s) => !searchName || s.name.toLowerCase().includes(searchName.toLowerCase())
+    (s) =>
+      !searchName || s.name.toLowerCase().includes(searchName.toLowerCase())
   );
 
   return (
@@ -165,166 +175,192 @@ function StudentManagement() {
           Student Management
         </h2>
 
-        <div className="d-flex gap-2 mb-3 flex-wrap">
-          <button
-            className="btn"
-            style={{ backgroundColor: "#800000", color: "#fff" }}
-            onClick={() => setShowForm(true)}
-          >
-            Add Student
-          </button>
-          <select
-            value={filterStrand}
-            onChange={(e) => setFilterStrand(e.target.value)}
-            className="form-select"
-            style={{ maxWidth: "200px", borderColor: "#800000" }}
-          >
-            <option value="">All Strands</option>
-            {strands.map((s) => (
-              <option key={s.strand_id} value={s.strand_id}>
-                {s.strand_name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterSection}
-            onChange={(e) => setFilterSection(e.target.value)}
-            className="form-select"
-            style={{ maxWidth: "200px", borderColor: "#800000" }}
-            disabled={!filterStrand}
-          >
-            <option value="">All Sections</option>
-            {sections.map((sec) => (
-              <option key={sec.section_id} value={sec.section_id}>
-                {sec.section_name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Search by name"
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            className="form-control"
-            style={{ maxWidth: "200px", borderColor: "#800000" }}
-          />
-        </div>
+        {/* ================================= Filters and Search ===================================*/}
+        {loading ? (
+          <Skeleton height={40} count={2} className="mb-3" />
+        ) : (
+          <div className="d-flex gap-2 mb-3 flex-wrap">
+            <button
+              className="btn"
+              style={{ backgroundColor: "#800000", color: "#fff" }}
+              onClick={() => setShowForm(true)}
+            >
+              Add Student
+            </button>
+            <select
+              value={filterStrand}
+              onChange={(e) => setFilterStrand(e.target.value)}
+              className="form-select"
+              style={{ maxWidth: "200px", borderColor: "#800000" }}
+            >
+              <option value="">All Strands</option>
+              {strands.map((s) => (
+                <option key={s.strand_id} value={s.strand_id}>
+                  {s.strand_name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterSection}
+              onChange={(e) => setFilterSection(e.target.value)}
+              className="form-select"
+              style={{ maxWidth: "200px", borderColor: "#800000" }}
+              disabled={!filterStrand}
+            >
+              <option value="">All Sections</option>
+              {sections.map((sec) => (
+                <option key={sec.section_id} value={sec.section_id}>
+                  {sec.section_name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Search by name"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="form-control"
+              style={{ maxWidth: "200px", borderColor: "#800000" }}
+            />
+          </div>
+        )}
 
-        <div className="table-responsive mb-3">
-          <h5
-            className="fw-semibold mb-2"
-            style={{
-              color: "#800000",
-              borderBottom: "2px solid #800000",
-              paddingBottom: "4px",
-            }}
-          >
-            Students per Strand & Section
-          </h5>
-          <table className="table table-bordered" style={{fontSize:".8rem"}}>
-            <thead style={{ backgroundColor: "#800000", color: "#fff" }}>
-              <tr>
-                <th>Strand</th>
-                <th>Section</th>
-                <th>Total Students</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(
-                students.reduce((acc, s) => {
-                  const key = `${s.strand_name || "N/A"}-${s.section_name || "N/A"}`;
-                  acc[key] = (acc[key] || 0) + 1;
-                  return acc;
-                }, {})
-              ).map(([key, count], idx) => {
-                const [strand, section] = key.split("-");
-                return (
-                  <tr key={idx}>
-                    <td>{strand}</td>
-                    <td>{section}</td>
-                    <td>{count}</td>
+        {/*======================== Skeleton Loader for Tables =============================*/}
+        {loading ? (
+          <>
+            <Skeleton height={40} width="40%" />
+            <Skeleton height={300} className="mt-2" />
+          </>
+        ) : (
+          <>
+            <div className="table-responsive mb-3">
+              <h5
+                className="fw-semibold mb-2"
+                style={{
+                  color: "#800000",
+                  borderBottom: "2px solid #800000",
+                  paddingBottom: "4px",
+                }}
+              >
+                Students per Strand & Section
+              </h5>
+              <table
+                className="table table-bordered"
+                style={{ fontSize: ".8rem" }}
+              >
+                <thead style={{ backgroundColor: "#800000", color: "#fff" }}>
+                  <tr>
+                    <th>Strand</th>
+                    <th>Section</th>
+                    <th>Total Students</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {Object.entries(
+                    students.reduce((acc, s) => {
+                      const key = `${s.strand_name || "N/A"}-${
+                        s.section_name || "N/A"
+                      }`;
+                      acc[key] = (acc[key] || 0) + 1;
+                      return acc;
+                    }, {})
+                  ).map(([key, count], idx) => {
+                    const [strand, section] = key.split("-");
+                    return (
+                      <tr key={idx}>
+                        <td>{strand}</td>
+                        <td>{section}</td>
+                        <td>{count}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div
+              className="p-3 rounded shadow-sm"
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "0.6rem",
+                borderTop: "5px solid #800000",
+              }}
+            >
+              <div className="table-responsive">
+                <table
+                  className="table table-bordered align-middle"
+                  style={{ fontSize: ".8rem" }}
+                >
+                  <thead style={{ backgroundColor: "#800000", color: "#fff" }}>
+                    <tr>
+                      <th>#</th>
+                      <th>Username</th>
+                      <th>Name</th>
+                      <th>Grade Level</th>
+                      <th>Strand</th>
+                      <th>Section</th>
+                      <th>Teacher</th>
+                      <th>Date Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="text-center text-muted">
+                          No students found
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredStudents.map((s, index) => (
+                        <tr key={s.user_id}>
+                          <td>{index + 1}</td>
+                          <td>{s.username}</td>
+                          <td>{s.name}</td>
+                          <td>{s.grade_level}</td>
+                          <td>{s.strand_name || "-"}</td>
+                          <td>{s.section_name || "-"}</td>
+                          <td>
+                            {teachers.find((t) => t.user_id === s.teacher_id)
+                              ?.name || "-"}
+                          </td>
+                          <td>{formatDate(s.created_at)}</td>
+                          <td>
+                            <button
+                              className="btn btn-sm me-2"
+                              style={{
+                                backgroundColor: "#ffc107",
+                                color: "#800000",
+                              }}
+                              onClick={() => handleEdit(s)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                backgroundColor: "#800000",
+                                color: "#fff",
+                              }}
+                              onClick={() => handleDelete(s.user_id)}
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      <div
-        className="p-3 rounded shadow-sm"
-        style={{
-          backgroundColor: "#fff",
-          borderRadius: "0.6rem",
-          borderTop: "5px solid #800000",
-        }}
-      >
-        <div className="table-responsive">
-          <table className="table table-bordered align-middle" style={{fontSize:".8rem"}}>
-            <thead style={{ backgroundColor: "#800000", color: "#fff" }}>
-              <tr>
-                <th>#</th>
-                <th>Username</th>
-                <th>Name</th>
-                <th>Grade Level</th>
-                <th>Strand</th>
-                <th>Section</th>
-                <th>Teacher</th>
-                <th>Date Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStudents.length === 0 ? (
-                <tr>
-                  <td colSpan="9" className="text-center text-muted">
-                    No students found
-                  </td>
-                </tr>
-              ) : (
-                filteredStudents.map((s, index) => (
-                  <tr key={s.user_id}>
-                    <td>{index + 1}</td>
-                    <td>{s.username}</td>
-                    <td>{s.name}</td>
-                    <td>{s.grade_level}</td>
-                    <td>{s.strand_name || "-"}</td>
-                    <td>{s.section_name || "-"}</td>
-                    <td>
-                      {teachers.find((t) => t.user_id === s.teacher_id)?.name ||
-                        "-"}
-                    </td>
-                    <td>{formatDate(s.created_at)}</td>
-                    <td>
-                      <button
-                        className="btn btn-sm me-2"
-                        style={{
-                          backgroundColor: "#ffc107",
-                          color: "#800000",
-                        }}
-                        onClick={() => handleEdit(s)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-sm"
-                        style={{
-                          backgroundColor: "#800000",
-                          color: "#fff",
-                        }}
-                        onClick={() => handleDelete(s.user_id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
+
+      {/* ========================== Add/Edit Form Modal ==========================*/}
       {showForm && (
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div

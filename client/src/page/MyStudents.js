@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
 import { FaUserGraduate, FaPrint, FaFileImport, FaGraduationCap } from "react-icons/fa";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+
 
 function MyStudents({ userId }) {
   const [students, setStudents] = useState([]);
@@ -198,8 +201,37 @@ function MyStudents({ userId }) {
       {showAddStudentForm && <AddStudentForm refresh={fetchStudents} close={() => setShowAddStudentForm(false)} teachers={teachers} strands={strands} />}
 
       {loading ? (
-        <p>Loading students...</p>
-      ) : (
+      <div className="mt-3">
+          <Skeleton height={30} width={200} style={{ marginBottom: "10px" }} />
+          <table className="table table-bordered">
+            <thead>
+              <tr>
+                {Array(6)
+                  .fill()
+                  .map((_, i) => (
+                    <th key={i}>
+                      <Skeleton height={20} />
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array(6)
+                .fill()
+                .map((_, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {Array(6)
+                      .fill()
+                      .map((_, colIndex) => (
+                        <td key={colIndex}>
+                          <Skeleton height={20} />
+                        </td>
+                      ))}
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>      ) : (
         <table id="students-table" className="table table-striped table-bordered table-responsive">
           <thead style={{ backgroundColor: "#800000", color: "white" }}>
             <tr>

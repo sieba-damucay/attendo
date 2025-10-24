@@ -8,10 +8,14 @@ function Login({ setUser }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setMsg("");
+    setLoading(true);
+
     try {
       const res = await api.post("/login", { email, password });
       localStorage.setItem("token", res.data.token);
@@ -22,6 +26,8 @@ function Login({ setUser }) {
       else navigate("/scanner");
     } catch {
       setMsg("Invalid credentials");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,23 +95,10 @@ function Login({ setUser }) {
             filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
           }}
         />
-        <h1
-          className="fw-bold"
-          style={{
-            color: "#222",
-            marginBottom: "0.3rem",
-            letterSpacing: "0.5px",
-          }}
-        >
-          QR Attendance
+        <h1 style={{ fontSize: "2rem", fontWeight: "bold", color: "#800000", marginBottom: "0.5rem" }}>
+          Welcome Back!
         </h1>
-        <p
-          style={{
-            fontSize: "0.9rem",
-            color: "#555",
-            marginBottom: "1.5rem",
-          }}
-        >
+        <p style={{ fontSize: "0.9rem", color: "#555", marginBottom: "1.5rem" }}>
           Sign in to continue
         </p>
 
@@ -158,29 +151,45 @@ function Login({ setUser }) {
 
         <button
           type="submit"
+          disabled={loading}
           style={{
             width: "100%",
             padding: "0.75rem",
             borderRadius: "0.5rem",
             border: "none",
-            background: "linear-gradient(135deg, #800000, #b71c1c)",
+            background: loading
+              ? "linear-gradient(135deg, #a05252, #b76b6b)"
+              : "linear-gradient(135deg, #800000, #b71c1c)",
             color: "#fff",
             fontWeight: "600",
             fontSize: "1rem",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
             transition: "all 0.3s ease",
             boxShadow: "0 4px 10px rgba(128,0,0,0.3)",
           }}
           onMouseOver={(e) => {
-            e.target.style.transform = "translateY(-3px)";
-            e.target.style.boxShadow = "0 6px 15px rgba(128,0,0,0.4)";
+            if (!loading) {
+              e.target.style.transform = "translateY(-3px)";
+              e.target.style.boxShadow = "0 6px 15px rgba(128,0,0,0.4)";
+            }
           }}
           onMouseOut={(e) => {
             e.target.style.transform = "translateY(0)";
             e.target.style.boxShadow = "0 4px 10px rgba(128,0,0,0.3)";
           }}
         >
-          Log In
+          {loading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Logging in...
+            </>
+          ) : (
+            "Log In"
+          )}
         </button>
       </form>
 

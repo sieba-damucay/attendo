@@ -16,9 +16,12 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
+import Skeleton, { SkeletonTheme } from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 function TeacherDashboard({ teacherId }) {
   const [attendance, setAttendance] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const COLORS = ["#28a745", "#ffc107", "#dc3545", "#6c757d"];
 
@@ -28,10 +31,13 @@ function TeacherDashboard({ teacherId }) {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const res = await api.get("/attendance-report", { params: { teacherId } });
       setAttendance(res.data);
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,113 +89,135 @@ function TeacherDashboard({ teacherId }) {
         <FaChalkboardTeacher size={28} /> Teacher Dashboard
       </h2>
 
-      {/* KPI Cards */}
-      <div className="d-flex flex-wrap mb-4 gap-3 justify-content-center">
-        {[
-          { label: "Total Students", value: attendance.length },
-          { label: "Present Today", value: summary.present },
-          { label: "Late Today", value: summary.late },
-          { label: "Absent Today", value: summary.absent },
-          { label: "Pending Today", value: summary.pending },
-        ].map((kpi, idx) => (
-          <div key={idx} className="flex-grow-1" style={{ minWidth: "160px", maxWidth: "220px" }}>
-            <div
-              className="card text-center"
-              style={{
-                border: "none",
-                borderTop: "6px solid #800000",
-                borderRadius: "0.75rem",
-                background: "#fff",
-                boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-                padding: "1.5rem 1rem",
-                transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = "0 10px 22px rgba(0,0,0,0.12)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 6px 18px rgba(0,0,0,0.08)";
-              }}
-            >
-              <h6 style={{ color: "#555", fontWeight: "600", marginBottom: ".5rem" }}>
-                {kpi.label}
-              </h6>
-              <h2 style={{ color: "#800000", fontWeight: "700", margin: 0 }}>{kpi.value}</h2>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts */}
-      <div className="row g-4">
-        <div className="col-md-6">
-          <div className="card chart-card">
-            <h5 className="chart-title">Attendance Trend</h5>
-            <div style={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lineData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="scans" stroke="#800000" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card chart-card">
-            <h5 className="chart-title">Attendance by Student</h5>
-            <div style={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="scans" fill="#800000" radius={[5, 5, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6">
-          <div className="card chart-card">
-            <h5 className="chart-title">Today's Attendance Summary</h5>
-            <div style={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label
+      <SkeletonTheme baseColor="#e0e0e0" highlightColor="#f5f5f5">
+        {/* KPI Cards */}
+        <div className="d-flex flex-wrap mb-4 gap-3 justify-content-center">
+          {loading
+            ? Array(5)
+                .fill()
+                .map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-grow-1"
+                    style={{ minWidth: "160px", maxWidth: "220px" }}
                   >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+                    <Skeleton height={100} borderRadius={10} />
+                  </div>
+                ))
+            : [
+                { label: "Total Students", value: attendance.length },
+                { label: "Present Today", value: summary.present },
+                { label: "Late Today", value: summary.late },
+                { label: "Absent Today", value: summary.absent },
+                { label: "Pending Today", value: summary.pending },
+              ].map((kpi, idx) => (
+                <div
+                  key={idx}
+                  className="flex-grow-1"
+                  style={{ minWidth: "160px", maxWidth: "220px" }}
+                >
+                  <div
+                    className="card text-center"
+                    style={{
+                      border: "none",
+                      borderTop: "6px solid #800000",
+                      borderRadius: "0.75rem",
+                      background: "#fff",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+                      padding: "1.5rem 1rem",
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    }}
+                  >
+                    <h6 style={{ color: "#555", fontWeight: "600", marginBottom: ".5rem" }}>
+                      {kpi.label}
+                    </h6>
+                    <h2 style={{ color: "#800000", fontWeight: "700", margin: 0 }}>{kpi.value}</h2>
+                  </div>
+                </div>
+              ))}
         </div>
-      </div>
 
+        {/* Charts */}
+        <div className="row g-4">
+          {loading ? (
+            <>
+              <div className="col-md-6">
+                <Skeleton height={320} borderRadius={10} />
+              </div>
+              <div className="col-md-6">
+                <Skeleton height={320} borderRadius={10} />
+              </div>
+              <div className="col-md-6">
+                <Skeleton height={320} borderRadius={10} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="col-md-6">
+                <div className="card chart-card">
+                  <h5 className="chart-title">Attendance Trend</h5>
+                  <div style={{ width: "100%", height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={lineData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="scans" stroke="#800000" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
 
+              <div className="col-md-6">
+                <div className="card chart-card">
+                  <h5 className="chart-title">Attendance by Student</h5>
+                  <div style={{ width: "100%", height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="scans" fill="#800000" radius={[5, 5, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
 
+              <div className="col-md-6">
+                <div className="card chart-card">
+                  <h5 className="chart-title">Today's Attendance Summary</h5>
+                  <div style={{ width: "100%", height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          label
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </SkeletonTheme>
 
-      {/* Card styles */}
       <style>{`
         .chart-card {
           background: #fff;

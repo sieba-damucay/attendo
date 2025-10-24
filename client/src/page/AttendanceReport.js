@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { FaClipboardList, FaPrint, FaTrashAlt, FaHistory, FaGraduationCap } from "react-icons/fa";
+import {
+  FaClipboardList,
+  FaPrint,
+  FaTrashAlt,
+  FaHistory,
+  FaGraduationCap,
+} from "react-icons/fa";
 import api from "../api/axiosConfig";
+import Skeleton from "react-loading-skeleton"; // ✅ Added
+import "react-loading-skeleton/dist/skeleton.css"; // ✅ Added
 
 function AttendanceReport({ teacherId }) {
   const [sections, setSections] = useState([]);
@@ -23,7 +31,9 @@ function AttendanceReport({ teacherId }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/attendance-report", { params: { teacherId } });
+      const res = await api.get("/attendance-report", {
+        params: { teacherId },
+      });
       const data = res.data;
       setAttendance(data);
       const uniqueSections = [
@@ -69,7 +79,7 @@ function AttendanceReport({ teacherId }) {
   const handleRemove = async (attendanceId) => {
     if (!window.confirm("Are you sure you want to remove this record?")) return;
     try {
-      await api.delete(`http://localhost:3000/api/attendance/${attendanceId}`);
+      await api.delete(`/attendance/${attendanceId}`);
       fetchData();
     } catch (err) {
       console.error(err);
@@ -111,7 +121,7 @@ function AttendanceReport({ teacherId }) {
   const handleViewHistory = async (student) => {
     setSelectedStudent(student);
     try {
-      const res = await api.get(`http://localhost:3000/api/attendance-history/${student.user_id}`);
+      const res = await api.get(`/attendance-history/${student.user_id}`);
       setHistoryData(res.data);
       setHistoryModalOpen(true);
     } catch (err) {
@@ -140,7 +150,10 @@ function AttendanceReport({ teacherId }) {
   };
 
   const getSummary = (data) => {
-    let present = 0, late = 0, absent = 0, pending = 0;
+    let present = 0,
+      late = 0,
+      absent = 0,
+      pending = 0;
     data.forEach((r) => {
       if (r.status === "Present") present++;
       else if (r.status === "Late") late++;
@@ -244,8 +257,39 @@ function AttendanceReport({ teacherId }) {
         </button>
       </div>
 
+      {/* ✅ Skeleton Loader Added */}
       {loading ? (
-        <p>Loading...</p>
+        <div className="mt-3">
+          <Skeleton height={30} width={250} style={{ marginBottom: "15px" }} />
+          <table className="table table-bordered">
+            <thead>
+              <tr>
+                {Array(9)
+                  .fill()
+                  .map((_, i) => (
+                    <th key={i}>
+                      <Skeleton height={20} />
+                    </th>
+                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array(6)
+                .fill()
+                .map((_, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {Array(9)
+                      .fill()
+                      .map((_, colIndex) => (
+                        <td key={colIndex}>
+                          <Skeleton height={20} />
+                        </td>
+                      ))}
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
       ) : displayReport.length === 0 ? (
         <p>No attendance records found.</p>
       ) : (
