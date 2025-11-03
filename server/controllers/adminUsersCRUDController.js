@@ -180,15 +180,30 @@ const UpdateStudents = (req, res) => {
 
 const DeleteStudents = (req, res) => {
   const { id } = req.params;
-  db.query(
-    "DELETE FROM users WHERE user_id=? AND role='student'",
-    [id],
-    (err) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ message: "Student deleted successfully" });
-    }
-  );
+
+  db.beginTransaction((err) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.query("DELETE FROM attendance WHERE user_id = ?", [id], (err) => {
+      if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+
+      db.query(
+        "DELETE FROM users WHERE user_id = ? AND role = 'student'",
+        [id],
+        (err, result) => {
+          if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+
+          db.commit((err) => {
+            if (err) return db.rollback(() => res.status(500).json({ error: err.message }));
+
+            res.json({ message: "Student and their attendance deleted successfully" });
+          });
+        }
+      );
+    });
+  });
 };
+
 
 export default {
   AddNewTeacher,

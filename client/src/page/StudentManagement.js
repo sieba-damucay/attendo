@@ -142,16 +142,23 @@ function StudentManagement() {
   };
 
   const handleDelete = async (id) => {
+    if (!id) {
+      alert("Invalid ID");
+      return;
+    }
+
     if (!window.confirm("Are you sure?")) return;
+
     try {
-      await api.delete(`/admin_students/${id}`);
+      await api.delete(`/admin_students/${id}`); 
       alert("Deleted");
       fetchStudents();
     } catch (err) {
-      console.error(err);
-      alert("Failed to delete");
+      console.error("Delete failed:", err);
+      alert("Failed to delete student");
     }
   };
+
 
   const formatDate = (dateStr) =>
     !dateStr ? "-" : new Date(dateStr).toLocaleString();
